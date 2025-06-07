@@ -1,6 +1,82 @@
-git clone https://github.com/rollinstone0521/savage_sniper.git
-cd savage_sniper
-TELOXIDE_TOKEN=7486925070:AAH5jgf6_ODkbPIP1r37NuGkWAQD9DNdyrE
-TELEGRAM_CHAT_ID=https://t.me/+Mlnh6uTgW5Q3OTMx
-SOLANA_RPC=https://api.mainnet-beta.solana.com
-BIRDEYE_API_KEY=your_birdeye_api_key_here
+use teloxide::prelude::*;
+use teloxide::types::ParseMode;
+use reqwest::Client;
+use tokio::time::{sleep, Duration};
+use dotenv::dotenv;
+use std::env;
+use log::info;
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize)]
+struct DexscreenerResponse {
+    pairs: Vec<Pair>,
+}
+
+#[derive(Debug, Deserialize)]
+struct Pair {
+    pairAddress: String,
+    baseToken: BaseToken,
+    volumeUsd24h: f64,
+    liquidityUsd: f64,
+}
+
+#[derive(Debug, Deserialize)]
+struct BaseToken {
+    symbol: String,
+    address: String,
+}
+
+#[tokio::main]
+async fn main() {
+    dotenv().ok();
+    env_logger::init();
+
+    let bot = Bot::from_env();
+    let chat_id: i64 = env::var("5946399452")
+        .expect("5946399452")
+        .parse()
+        .expect("5946399452");
+
+    let client = Client::new();
+
+    loop {
+        // Fetch data from Dexscreener
+        let url = "https://api.dexscreener.com/latest/dex/pairs/solana";
+
+        let resp = client
+            .get(url)
+            .send()
+            .await
+            .unwrap()
+            .json::<DexscreenerResponse>()
+            .await
+            .unwrap();
+
+        for pair in resp.pairs.iter() {
+            // Example trigger: volume > $50k AND liquidity > $20k
+            if pair.volumeUsd24h > 50000.0 && pair.liquidityUsd > 20000.0 {
+                let msg = format!(
+                    "🚀 *New Degen Token Spotted!*\n\n*Token:* {}\n*Volume:* ${:.2}\n*Liquidity:* ${:.2}\n*Pair Address:* `{}`",
+                    pair.baseToken.symbol,
+                    pair.volumeUsd24h,
+                    pair.liquidityUsd,
+                    pair.pairAddress
+                );
+
+                bot.send_message(chat_id, msg)
+                    .parse_mode(ParseMode::MarkdownV2)
+                    .send()
+                    .await
+                    .unwrap();
+
+                info!("Posted token: {}", pair.baseToken.symbol);
+
+                // Optional delay between alerts
+                sleep(Duration::from_secs(5)).await;
+            }
+        }
+
+        // Wait before next scan
+        sleep(Duration::from_secs(60)).await;
+    }
+}
