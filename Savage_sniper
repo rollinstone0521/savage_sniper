@@ -1,6 +1,6 @@
 git clone https://github.com/rollinstone0521/savage_sniper.git
 cd savage_sniper
-TELOXIDE_TOKEN=your_telegram_bot_token_here
-TELEGRAM_CHAT_ID=-100your_group_chat_id_here
+TELOXIDE_TOKEN=7486925070:AAH5jgf6_ODkbPIP1r37NuGkWAQD9DNdyrE
+TELEGRAM_CHAT_ID=https://t.me/+Mlnh6uTgW5Q3OTMx
 SOLANA_RPC=https://api.mainnet-beta.solana.com
 BIRDEYE_API_KEY=your_birdeye_api_key_here
